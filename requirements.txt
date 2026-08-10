@@ -1,5 +1,5 @@
-pandas
-numpy
+pandas==3.0.5 
+numpy==2.5.1
 scikit-learn
 xgboost
 streamlit
@@ -10,3 +10,5 @@ joblib
 matplotlib
 seaborn
 jupyter
+
+# pandas 3.0.5 mere mai chal nhi rha idk kyu dll error maybe ek baar apne system mai 3.0.5 krke koi notebook run krna aur batana
