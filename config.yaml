@@ -1,0 +1,89 @@
+# =====================================================================
+# Dynamic Fare Engine Configuration
+# =====================================================================
+
+paths:
+  raw_ride_boston: "data/raw/ride/uber_lyft_boston.csv"
+  raw_ride_fares: "data/raw/ride/uber_fares.csv"
+  raw_delivery_train: "data/raw/delivery/food_demand_train.csv"
+  raw_delivery_centers: "data/raw/delivery/fulfilment_center_info.csv"
+  raw_delivery_meals: "data/raw/delivery/meal_info.csv"
+  raw_delivery_india: "data/raw/delivery/food_delivery_india.csv"
+  raw_delivery_time: "data/raw/delivery/food_delivery_time.csv"
+  weather_raw_dir: "data/raw/weather/openweather_raw"
+
+  interim_ride: "data/interim/ride_hourly_clean.parquet"
+  interim_delivery: "data/interim/delivery_weekly_clean.parquet"
+  interim_delivery_logistics: "data/interim/delivery_logistics_clean.parquet"
+  processed_supply: "data/processed/simulated_supply.parquet"
+
+  processed_dir: "data/processed"
+  models_dir: "models"
+  db_path: "data/db.sqlite"
+
+features:
+  ride:
+    sample_size: 150000
+    test_size: 0.15
+    val_size: 0.15
+    random_state: 42
+    target_col: "price"
+    feature_cols:
+      - "distance"
+      - "surge_multiplier"
+      - "hour"
+      - "day_of_week"
+      - "is_weekend"
+      - "is_rush_hour"
+      - "is_late_night"
+      - "is_premium_tier"
+      - "is_shared"
+      - "sin_hour"
+      - "cos_hour"
+      - "sin_day"
+      - "cos_day"
+  delivery:
+    test_size: 0.15
+    val_size: 0.15
+    random_state: 42
+    target_col: "delivery_delay"
+    feature_cols:
+      - "delivery_distance"
+      - "order_value"
+      - "traffic_severity"
+      - "weather_severity"
+      - "is_small_basket"
+      - "is_long_distance"
+      - "delivery_friction_index"
+
+models:
+  ride_demand:
+    n_estimators: 120
+    learning_rate: 0.08
+    max_depth: 6
+    random_state: 42
+    n_jobs: -1
+  delivery_friction:
+    n_estimators: 100
+    learning_rate: 0.08
+    max_depth: 5
+    random_state: 42
+    n_jobs: -1
+  cancellation:
+    penalty: "l2"
+    C: 1.0
+    random_state: 42
+
+pricing:
+  base_fare: 3.50
+  per_mile_rate: 1.85
+  per_minute_rate: 0.35
+  premium_multiplier: 1.60
+  min_surge: 1.0
+  max_surge: 3.5
+  surge_step: 0.1
+  cancel_risk_cap: 0.45
+  base_delivery_fee: 30.0
+  per_km_delivery_rate: 8.0
+  small_basket_threshold: 250.0
+  small_basket_surcharge: 15.0

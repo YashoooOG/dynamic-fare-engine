@@ -1,0 +1,24 @@
+{
+  "city": "Boston",
+  "timestamp": "2026-08-31T15:53:18.848279",
+  "weather": [
+    {
+      "main": "Rain",
+      "description": "light rain"
+    }
+  ],
+  "main": {
+    "temp": 14.5,
+    "feels_like": 13.2,
+    "humidity": 82,
+    "pressure": 1012
+  },
+  "wind": {
+    "speed": 4.8,
+    "deg": 180
+  },
+  "rain": {
+    "1h": 1.2
+  },
+  "is_mock": true
+}
