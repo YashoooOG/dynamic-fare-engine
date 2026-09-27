@@ -4,7 +4,7 @@
 
 The **Dynamic Fare Engine** is a high-throughput, multi-modal dynamic pricing and revenue optimization platform designed for on-demand **Ride-Hailing (Uber/Lyft)** and **Food Delivery** marketplaces.
 
-It integrates machine learning demand forecasting, logistic price elasticity models, and constrained revenue optimization algorithms to compute real-time surge multipliers while bounding customer cancellation risk.
+It integrates machine learning demand forecasting, logistic price elasticity models, and constrained revenue optimization algorithms to compute real-time surge multipliers.
 
 ```mermaid
 flowchart TD
@@ -15,20 +15,19 @@ flowchart TD
         INGEST_RIDE --> INTERIM[data/interim/]
         INGEST_DELIV --> INTERIM
         INTERIM --> FEAT[src/features/build_features.py]
-        FEAT --> PROC[data/processed/]
+        PROC[data/processed/]
+        FEAT --> PROC
     end
 
     subgraph Machine Learning Layer
         PROC --> TRAIN[src/models/train.py]
         TRAIN --> M_RIDE[models/demand_model_ride.joblib]
         TRAIN --> M_DELIV[models/demand_model_delivery.joblib]
-        TRAIN --> M_CANCEL[models/cancellation_model.joblib]
     end
 
     subgraph Pricing & Optimization
         M_RIDE --> SURGE_ENG[src/pricing/surge_engine.py]
         M_DELIV --> SURGE_ENG
-        M_CANCEL --> SURGE_ENG
         SURGE_ENG --> OPT[src/pricing/optimizer.py]
     end
 
@@ -36,7 +35,7 @@ flowchart TD
         OPT --> DB[(SQLite data/db.sqlite)]
         SURGE_ENG --> APP[app/streamlit_app.py]
         DB --> APP
-        APP --> UI_COMPONENTS[app/components: Price, Risk, Demand, Map]
+        APP --> UI_COMPONENTS[app/components: Price, Demand, Map]
     end
 ```
 
@@ -76,12 +75,10 @@ Where:
 - $S_{\text{weather}} = (\text{WeatherSeverity} - 1) \cdot 10.0$
 - $S_{\text{traffic}} = (\text{TrafficSeverity} - 1) \cdot 5.0$.
 
-### C. Constrained Expected Revenue Optimization
+### C. Expected Revenue Optimization
 The `PriceOptimizer` solves for the optimal surge $s^*$:
 
-$$s^* = \arg\max_{s \in [1.0, 3.5]} \Big( \text{Fare}(s) \cdot \big(1 - P_{\text{cancel}}(s)\big) \cdot P_{\text{fulfill}}(s) \Big)$$
-
-$$\text{Subject to: } P_{\text{cancel}}(s) \le 0.45 \quad (\text{Policy Drop-off Risk Cap})$$
+$$s^* = \arg\max_{s \in [1.0, 3.5]} \Big( \text{Fare}(s) \cdot P_{\text{accept}}(s) \cdot P_{\text{fulfill}}(s) \Big)$$
 
 ---
 
@@ -91,7 +88,7 @@ $$\text{Subject to: } P_{\text{cancel}}(s) \le 0.45 \quad (\text{Policy Drop-off
 |---|---|---|
 | Ingestion | `src/ingestion/` | Parses Boston ride dataset, India food delivery logistics, and OpenWeatherMap APIs. |
 | Feature Engineering | `src/features/` | Extracts cyclical time transforms ($\sin/\cos$), vehicle tier encodings, and rolling zone velocity. |
-| Model Training | `src/models/` | XGBoost/Random Forest regression for demand forecasting and logistic cancellation classification. |
+| Model Training | `src/models/` | XGBoost/Random Forest regression for demand forecasting and delivery delay prediction. |
 | Pricing Engine | `src/pricing/` | Computes dynamic surge multipliers, itemized quotes, driver earnings, and platform margins. |
 | Storage Layer | `src/db/` | SQLite database persistence for urban zones, pricing transaction logs, and snapshots. |
 | Web Frontend | `app/` | Modern Streamlit dashboard with dark mode CSS, real-time ML inference, maps, and simulation. |

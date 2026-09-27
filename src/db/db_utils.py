@@ -83,7 +83,6 @@ def log_pricing_event(event_dict: dict) -> str:
     base_fare = float(event_dict.get("base_fare", 0.0))
     surge_multiplier = float(event_dict.get("surge_multiplier", 1.0))
     total_fare = float(event_dict.get("total_fare", 0.0))
-    cancellation_risk = float(event_dict.get("cancellation_risk", 0.1))
     is_premium = int(event_dict.get("is_premium", 0))
     weather_condition = str(event_dict.get("weather_condition", "Clear"))
     traffic_condition = str(event_dict.get("traffic_condition", "Normal"))
@@ -95,12 +94,12 @@ def log_pricing_event(event_dict: dict) -> str:
         INSERT INTO pricing_logs (
             request_id, service_type, timestamp, zone_name, distance_miles,
             duration_min, base_fare, surge_multiplier, total_fare,
-            cancellation_risk, is_premium, weather_condition,
+            is_premium, weather_condition,
             traffic_condition, customer_accepted, driver_payout, platform_fee
         ) VALUES (
             :request_id, :service_type, :timestamp, :zone_name, :distance_miles,
             :duration_min, :base_fare, :surge_multiplier, :total_fare,
-            :cancellation_risk, :is_premium, :weather_condition,
+            :is_premium, :weather_condition,
             :traffic_condition, :customer_accepted, :driver_payout, :platform_fee
         )
     """)
@@ -116,7 +115,6 @@ def log_pricing_event(event_dict: dict) -> str:
             "base_fare": base_fare,
             "surge_multiplier": surge_multiplier,
             "total_fare": total_fare,
-            "cancellation_risk": cancellation_risk,
             "is_premium": is_premium,
             "weather_condition": weather_condition,
             "traffic_condition": traffic_condition,
@@ -162,8 +160,7 @@ def get_marketplace_kpis() -> dict:
                 "acceptance_rate_pct": 100.0,
                 "gross_revenue": 0.0,
                 "avg_surge": 1.0,
-                "avg_fare": 0.0,
-                "avg_cancellation_risk": 0.0
+                "avg_fare": 0.0
             }
         
         total = len(df)
@@ -176,8 +173,7 @@ def get_marketplace_kpis() -> dict:
             "acceptance_rate_pct": round((accepted / max(1, total)) * 100, 1),
             "gross_revenue": round(revenue, 2),
             "avg_surge": round(float(df["surge_multiplier"].mean()), 2),
-            "avg_fare": round(float(df["total_fare"].mean()), 2),
-            "avg_cancellation_risk": round(float(df["cancellation_risk"].mean()) * 100, 1)
+            "avg_fare": round(float(df["total_fare"].mean()), 2)
         }
     except Exception as e:
         logger.warning(f"Error computing KPIs: {e}")
@@ -187,8 +183,7 @@ def get_marketplace_kpis() -> dict:
             "acceptance_rate_pct": 0.0,
             "gross_revenue": 0.0,
             "avg_surge": 1.0,
-            "avg_fare": 0.0,
-            "avg_cancellation_risk": 0.0
+            "avg_fare": 0.0
         }
 
 

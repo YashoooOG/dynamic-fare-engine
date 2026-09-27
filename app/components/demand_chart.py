@@ -64,7 +64,7 @@ def render_hourly_demand_supply_chart(current_hour: int = 14):
 
 def render_elasticity_curve(optimizer_curve_df: pd.DataFrame, selected_surge: float = 1.5):
     """
-    Render revenue optimization trade-off: Expected Revenue vs. Cancellation Probability.
+    Render revenue optimization trade-off: Expected Revenue vs. Customer Acceptance Probability.
     """
     if optimizer_curve_df.empty:
         return
@@ -73,12 +73,12 @@ def render_elasticity_curve(optimizer_curve_df: pd.DataFrame, selected_surge: fl
 
     line_rev = base.mark_line(color="#6366f1", strokeWidth=3.5).encode(
         y=alt.Y("expected_revenue:Q", title="Expected Gross Revenue ($)", axis=alt.Axis(titleColor="#6366f1")),
-        tooltip=["surge_multiplier", "expected_revenue", "cancellation_risk", "fare"]
+        tooltip=["surge_multiplier", "expected_revenue", "acceptance_probability", "fare"]
     )
 
-    line_risk = base.mark_line(color="#f43f5e", strokeDash=[4, 4], strokeWidth=2).encode(
-        y=alt.Y("cancellation_risk:Q", title="Cancellation Probability", axis=alt.Axis(titleColor="#f43f5e", format="%")),
-        tooltip=["surge_multiplier", "cancellation_risk"]
+    line_accept = base.mark_line(color="#10b981", strokeDash=[4, 4], strokeWidth=2).encode(
+        y=alt.Y("acceptance_probability:Q", title="Acceptance Probability", axis=alt.Axis(titleColor="#10b981", format="%")),
+        tooltip=["surge_multiplier", "acceptance_probability"]
     )
 
     rule = alt.Chart(pd.DataFrame({"surge": [selected_surge]})).mark_rule(
@@ -87,7 +87,7 @@ def render_elasticity_curve(optimizer_curve_df: pd.DataFrame, selected_surge: fl
         strokeDash=[3, 3]
     ).encode(x="surge:Q")
 
-    combined = alt.layer(line_rev, line_risk, rule).resolve_scale(
+    combined = alt.layer(line_rev, line_accept, rule).resolve_scale(
         y="independent"
     ).properties(height=280).configure_view(strokeWidth=0)
 

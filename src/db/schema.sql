@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS pricing_logs (
     base_fare REAL NOT NULL,
     surge_multiplier REAL NOT NULL,
     total_fare REAL NOT NULL,
-    cancellation_risk REAL NOT NULL,
     is_premium INTEGER DEFAULT 0,
     weather_condition VARCHAR(32),
     traffic_condition VARCHAR(32),

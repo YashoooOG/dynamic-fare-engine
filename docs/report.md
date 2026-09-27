@@ -8,8 +8,8 @@ This project delivers an end-to-end **Dynamic Fare Engine** that leverages Machi
 
 ### Key Highlights:
 - **$+38.5\%$ Average Gross Revenue Lift** over static pricing under supply-demand imbalances.
-- **Microeconomic Drop-off Risk Guardrails**: Enforces a maximum customer cancellation probability cap of $45\%$.
-- **High-Performance ML Forecasting**: XGBoost Regressors achieve $R^2 = 0.923$ on trip fare forecasting and $\text{ROC-AUC} = 0.941$ on customer cancellation classification.
+- **Microeconomic Price Elasticity Balancing**: Optimizes fares against price elasticity curves to balance revenue and marketplace fulfillment.
+- **High-Performance ML Forecasting**: XGBoost Regressors achieve $R^2 = 0.923$ on trip fare forecasting.
 - **Interactive UI Dashboard**: Streamlit interface with dark-mode styling, real-time dispatch simulator, 24-hour diurnal curves, and Monte Carlo benchmarking.
 
 ---
@@ -34,7 +34,6 @@ This project delivers an end-to-end **Dynamic Fare Engine** that leverages Machi
 |---|---|---|---|---|
 | **Ride Demand / Fare Forecasting** | XGBoost Regressor | 70% (105,000) | 15% (22,500) | $R^2 = 0.923$ \| $\text{MAE} = \$1.42$ \| $\text{RMSE} = \$2.18$ |
 | **Delivery Delay Estimation** | Gradient Boosting | 70% (31,500) | 15% (6,750) | $R^2 = 0.884$ \| $\text{MAE} = 2.10\text{ min}$ \| $\text{RMSE} = 3.25\text{ min}$ |
-| **Customer Cancellation Risk** | XGBoost Classifier | 70% (42,000) | 15% (9,000) | $\text{ROC-AUC} = 0.941$ \| $\text{Log-Loss} = 0.274$ \| $\text{Acc} = 88.6\%$ |
 
 ---
 
@@ -52,7 +51,6 @@ Total Gross Revenue                 $16,842.50         $23,410.80 (+39.0%)
 Marketplace Fulfillment Rate        58.4%              64.2% (+5.8%)
 Average Fare per Requested Ride     $18.30             $28.40
 Average Surge Multiplier            1.00x              1.65x
-Customer Cancellation Rate          14.2%              21.8% (Under Cap)
 Driver Payout Share (78%)           $13,137.15         $18,260.42
 Platform Net Margin (22%)           $3,705.35          $5,150.38
 ========================================================================
@@ -60,7 +58,7 @@ Platform Net Margin (22%)           $3,705.35          $5,150.38
 
 ### Strategic Conclusions:
 1. **Dynamic Pricing creates positive supply-side incentives**: Higher surge multipliers attract available drivers into bottleneck zones, lifting total completed rides.
-2. **Cancellation Risk Capping is critical**: Without bounding surge at $3.5\text{x}$ and capping churn at $45\%$, customer drop-off rises exponentially, degrading customer lifetime value (LTV).
+2. **Smooth Price Elasticity**: Calibrated sensitivity ensures fares balance conversion and revenue without causing sudden demand collapse.
 
 ---
 

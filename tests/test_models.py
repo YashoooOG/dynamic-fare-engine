@@ -1,5 +1,5 @@
 """
-Unit tests for Machine Learning Models (DemandForecastModel, CancellationModel, evaluate).
+Unit tests for Machine Learning Models (DemandForecastModel, evaluate).
 """
 
 import unittest
@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 
 from src.models.demand_forecast import DemandForecastModel
-from src.models.cancellation_model import CancellationModel, generate_cancellation_training_data
 from src.models.evaluate import evaluate_regression, evaluate_classification
 
 
@@ -31,19 +30,6 @@ class TestModels(unittest.TestCase):
         self.assertEqual(len(preds), 100)
         metrics = model.evaluate(X, y, split_name="Train")
         self.assertGreater(metrics["r2"], 0.90)
-
-    def test_cancellation_model_fit_predict_proba(self):
-        X, y = generate_cancellation_training_data(n_samples=500, seed=42)
-        model = CancellationModel({"model_type": "logistic"})
-        model.fit(X, y)
-        self.assertTrue(model.is_fitted)
-
-        probs = model.predict_proba(X)
-        self.assertEqual(len(probs), 500)
-        self.assertTrue(all(0.0 <= p <= 1.0 for p in probs))
-
-        metrics = model.evaluate(X, y, split_name="Train")
-        self.assertGreater(metrics["roc_auc"], 0.70)
 
     def test_evaluate_regression_helper(self):
         y_true = np.array([10.0, 20.0, 30.0])

@@ -10,7 +10,6 @@ import numpy as np
 from src.features.time_features import add_time_features
 from src.features.zone_encoding import encode_vehicle_tiers, encode_delivery_attributes
 from src.models.demand_forecast import DemandForecastModel
-from src.models.cancellation_model import CancellationModel
 
 
 class TestPipeline(unittest.TestCase):
@@ -39,13 +38,9 @@ class TestPipeline(unittest.TestCase):
 
     def test_model_loading_and_inference(self):
         ride_model_path = "models/demand_model_ride.joblib"
-        cancel_model_path = "models/cancellation_model.joblib"
         
         self.assertTrue(Path(ride_model_path).exists())
-        self.assertTrue(Path(cancel_model_path).exists())
-        
         ride_model = DemandForecastModel.load(ride_model_path)
-        cancel_model = CancellationModel.load(cancel_model_path)
         
         sample_ride = pd.DataFrame([{
             "distance": 3.5,
@@ -67,20 +62,6 @@ class TestPipeline(unittest.TestCase):
         pred_fare = ride_model.predict(sample_ride)
         self.assertEqual(len(pred_fare), 1)
         self.assertGreater(pred_fare[0], 0)
-        
-        sample_cancel = pd.DataFrame([{
-            "surge_multiplier": 1.5,
-            "distance": 4.0,
-            "fare": 18.5,
-            "wait_time_min": 6.0,
-            "traffic_severity": 2,
-            "weather_severity": 1,
-            "is_new_user": 0
-        }])
-        
-        pred_risk = cancel_model.predict_proba(sample_cancel)
-        self.assertEqual(len(pred_risk), 1)
-        self.assertTrue(0.0 <= pred_risk[0] <= 1.0)
 
 
 if __name__ == "__main__":

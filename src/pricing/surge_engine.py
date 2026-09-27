@@ -1,7 +1,7 @@
 """
 Dynamic Surge Pricing Engine Module.
 Implements multi-modal real-time surge pricing algorithms for Ride-Hailing and Food Delivery,
-integrating trained XGBoost demand & cancellation models with economic price elasticity curves.
+integrating trained XGBoost demand forecasting models with economic price elasticity curves.
 """
 
 import os
@@ -12,7 +12,6 @@ import pandas as pd
 import yaml
 
 from src.models.demand_forecast import DemandForecastModel
-from src.models.cancellation_model import CancellationModel
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class DynamicFareEngine:
     Core Dynamic Pricing Engine supporting:
     - Ride-Hailing Dynamic Surge Pricing & Tier Economics
     - On-Demand Food Delivery Dynamic Fees with Weather/Traffic Friction
-    - Microeconomic Price Elasticity & Cancellation Risk Caps
+    - Microeconomic Price Elasticity
     - ML-guided Demand and Delay Forecasting
     """
 
@@ -40,7 +39,6 @@ class DynamicFareEngine:
         self.min_surge = float(p_cfg.get("min_surge", 1.0))
         self.max_surge = float(p_cfg.get("max_surge", 3.5))
         self.surge_step = float(p_cfg.get("surge_step", 0.1))
-        self.cancel_risk_cap = float(p_cfg.get("cancel_risk_cap", 0.45))
         
         # Delivery parameters
         self.base_delivery_fee = float(p_cfg.get("base_delivery_fee", 30.0))
@@ -51,7 +49,6 @@ class DynamicFareEngine:
         # ML Models
         self.ride_demand_model = None
         self.delivery_delay_model = None
-        self.cancellation_model = None
         self._load_ml_models()
 
     def _load_config(self, config_path: str) -> dict:
@@ -84,14 +81,6 @@ class DynamicFareEngine:
             except Exception as e:
                 logger.warning(f"Could not load delivery model: {e}")
 
-        # 3. Cancellation Risk Classifier
-        cancel_path = models_dir / "cancellation_model.joblib"
-        if cancel_path.exists():
-            try:
-                self.cancellation_model = CancellationModel.load(str(cancel_path))
-            except Exception as e:
-                logger.warning(f"Could not load cancellation model: {e}")
-
     def calculate_surge_multiplier(
         self,
         demand: float,
@@ -122,48 +111,6 @@ class DynamicFareEngine:
         stepped = round(round(clipped / self.surge_step) * self.surge_step, 2)
         return float(np.clip(stepped, self.min_surge, self.max_surge))
 
-    def estimate_cancellation_risk(
-        self,
-        surge_multiplier: float,
-        distance_miles: float,
-        fare: float,
-        wait_time_min: float = 5.0,
-        traffic_severity: int = 1,
-        weather_severity: int = 1,
-        is_new_user: int = 0
-    ) -> float:
-        """
-        Predict probability of customer rejection or cancellation.
-        Uses trained Cancellation XGBoost model if available, fallback to logistic elasticity.
-        """
-        if self.cancellation_model and self.cancellation_model.is_fitted:
-            sample = pd.DataFrame([{
-                "surge_multiplier": float(surge_multiplier),
-                "distance": float(distance_miles),
-                "fare": float(fare),
-                "wait_time_min": float(wait_time_min),
-                "traffic_severity": int(traffic_severity),
-                "weather_severity": int(weather_severity),
-                "is_new_user": int(is_new_user)
-            }])
-            try:
-                prob = self.cancellation_model.predict_proba(sample)[0]
-                return round(float(np.clip(prob, 0.02, 0.98)), 3)
-            except Exception as e:
-                logger.debug(f"Model prediction fallback: {e}")
-
-        # Mathematical fallback
-        z = (
-            -2.50
-            + 1.35 * (surge_multiplier - 1.0)
-            + 0.09 * wait_time_min
-            + 0.12 * (traffic_severity - 1)
-            + 0.15 * (weather_severity - 1)
-            + 0.30 * is_new_user
-        )
-        prob = 1.0 / (1.0 + np.exp(-z))
-        return round(float(np.clip(prob, 0.02, 0.98)), 3)
-
     def calculate_ride_fare(
         self,
         distance_miles: float,
@@ -171,10 +118,7 @@ class DynamicFareEngine:
         surge_multiplier: float = 1.0,
         is_premium: bool = False,
         is_shared: bool = False,
-        wait_time_min: float = 5.0,
         traffic_severity: int = 1,
-        weather_severity: int = 1,
-        is_new_user: int = 0,
         hour: int = 14,
         day_of_week: int = 2
     ) -> dict:
@@ -231,17 +175,6 @@ class DynamicFareEngine:
             except Exception as e:
                 logger.debug(f"ML reference inference skipped: {e}")
 
-        # Cancellation risk
-        cancel_risk = self.estimate_cancellation_risk(
-            surge_multiplier=surge,
-            distance_miles=dist,
-            fare=total_fare,
-            wait_time_min=wait_time_min,
-            traffic_severity=traffic_severity,
-            weather_severity=weather_severity,
-            is_new_user=is_new_user
-        )
-
         driver_payout = round(total_fare * 0.78, 2)
         platform_fee = round(total_fare - driver_payout, 2)
 
@@ -258,7 +191,6 @@ class DynamicFareEngine:
             "total_fare": total_fare,
             "driver_payout": driver_payout,
             "platform_fee": platform_fee,
-            "cancellation_risk": cancel_risk,
             "ml_predicted_fare": ml_predicted_price or total_fare
         }
 

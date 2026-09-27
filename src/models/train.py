@@ -1,7 +1,7 @@
 """
 Main Model Training Pipeline Orchestrator.
-Loads preprocessed training splits from data/processed/, trains demand forecasting,
-delivery friction, and cancellation risk models, evaluates performance,
+Loads preprocessed training splits from data/processed/, trains demand forecasting
+and delivery friction models, evaluates performance,
 and saves the final .joblib artifacts to models/.
 """
 
@@ -13,9 +13,7 @@ import yaml
 
 from src.features.build_features import build_all
 from src.models.demand_forecast import DemandForecastModel
-from src.models.cancellation_model import CancellationModel, generate_cancellation_training_data
-from src.models.evaluate import evaluate_regression, evaluate_classification
-from sklearn.model_selection import train_test_split
+from src.models.evaluate import evaluate_regression
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -36,8 +34,7 @@ def train_all_models(config_path: str = "config.yaml") -> dict:
     1. Check/load processed datasets
     2. Train and evaluate ride demand/fare model
     3. Train and evaluate delivery delay model
-    4. Train and evaluate customer cancellation model
-    5. Save all models to models/*.joblib
+    4. Save all models to models/*.joblib
     """
     config = load_config(config_path)
     models_dir = Path(config.get("paths", {}).get("models_dir", "models"))
@@ -55,7 +52,7 @@ def train_all_models(config_path: str = "config.yaml") -> dict:
     # =========================================================================
     # A. Ride Demand / Fare Forecasting Model
     # =========================================================================
-    logger.info("--- [1/3] Training Ride Fare / Demand Model ---")
+    logger.info("--- [1/2] Training Ride Fare / Demand Model ---")
     ride_train = pd.read_parquet(processed_dir / "ride_train.parquet")
     ride_val = pd.read_parquet(processed_dir / "ride_val.parquet")
     ride_test = pd.read_parquet(processed_dir / "ride_test.parquet")
@@ -91,7 +88,7 @@ def train_all_models(config_path: str = "config.yaml") -> dict:
     # =========================================================================
     # B. Delivery Operational Delay / Friction Model
     # =========================================================================
-    logger.info("--- [2/3] Training Delivery Operational Friction Model ---")
+    logger.info("--- [2/2] Training Delivery Operational Friction Model ---")
     deliv_train = pd.read_parquet(processed_dir / "delivery_train.parquet")
     deliv_val = pd.read_parquet(processed_dir / "delivery_val.parquet")
     deliv_test = pd.read_parquet(processed_dir / "delivery_test.parquet")
@@ -121,51 +118,19 @@ def train_all_models(config_path: str = "config.yaml") -> dict:
     deliv_model.save(str(deliv_model_path))
     deliv_model.save(str(models_dir / "delivery_friction_xgb.joblib"))
     
-    # =========================================================================
-    # C. Cancellation / Customer Acceptance Risk Classifier
-    # =========================================================================
-    logger.info("--- [3/3] Training Customer Cancellation Risk Model ---")
-    X_cancel, y_cancel = generate_cancellation_training_data(n_samples=60000, seed=42)
-    
-    X_c_train_val, X_c_test, y_c_train_val, y_c_test = train_test_split(
-        X_cancel, y_cancel, test_size=0.15, random_state=42
-    )
-    X_c_train, X_c_val, y_c_train, y_c_val = train_test_split(
-        X_c_train_val, y_c_train_val, test_size=0.15 / 0.85, random_state=42
-    )
-    
-    cancel_model_cfg = config.get("models", {}).get("cancellation", {
-        "model_type": "xgboost",
-        "n_estimators": 80,
-        "learning_rate": 0.08,
-        "max_depth": 4
-    })
-    
-    cancellation_model = CancellationModel(cancel_model_cfg)
-    cancellation_model.fit(X_c_train, y_c_train)
-    
-    val_cancel_metrics = cancellation_model.evaluate(X_c_val, y_c_val, split_name="Validation")
-    test_cancel_metrics = cancellation_model.evaluate(X_c_test, y_c_test, split_name="Test")
-    
-    cancel_model_path = models_dir / "cancellation_model.joblib"
-    cancellation_model.save(str(cancel_model_path))
-    
     logger.info("============================================================")
     logger.info("MODEL TRAINING PIPELINE COMPLETED SUCCESSFULLY")
     logger.info(f"Ride Model Test R²: {test_ride_metrics['r2']:.4f} (MAE: ${test_ride_metrics['mae']:.2f})")
     logger.info(f"Delivery Model Test R²: {test_deliv_metrics['r2']:.4f} (MAE: {test_deliv_metrics['mae']:.2f} mins)")
-    logger.info(f"Cancellation Model Test ROC-AUC: {test_cancel_metrics['roc_auc']:.4f}")
     logger.info(f"Saved artifacts to {models_dir}/")
     logger.info("============================================================")
     
     return {
         "ride_model": ride_demand_model,
         "delivery_model": deliv_model,
-        "cancellation_model": cancellation_model,
         "metrics": {
             "ride": {"val": val_ride_metrics, "test": test_ride_metrics},
-            "delivery": {"val": val_deliv_metrics, "test": test_deliv_metrics},
-            "cancellation": {"val": val_cancel_metrics, "test": test_cancel_metrics}
+            "delivery": {"val": val_deliv_metrics, "test": test_deliv_metrics}
         }
     }
 

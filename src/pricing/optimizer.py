@@ -1,6 +1,6 @@
 """
 Revenue Optimization & Monte Carlo Pricing Simulator Module.
-Computes optimal revenue-maximizing surge multipliers subject to customer cancellation risk caps,
+Computes optimal revenue-maximizing surge multipliers based on price elasticity curves,
 and executes microeconomic marketplace simulations comparing Static vs. Dynamic pricing strategies.
 """
 
@@ -18,13 +18,12 @@ logger = logging.getLogger(__name__)
 
 class PriceOptimizer:
     """
-    Constrained Revenue Optimization Engine.
-    Maximizes expected platform gross revenue E[R] while bounding customer drop-off risk.
+    Revenue Optimization Engine.
+    Maximizes expected platform gross revenue E[R] based on price elasticity and driver fulfillment.
     """
 
-    def __init__(self, engine: DynamicFareEngine = None, cancel_risk_cap: float = 0.45):
+    def __init__(self, engine: DynamicFareEngine = None):
         self.engine = engine or DynamicFareEngine()
-        self.cancel_risk_cap = cancel_risk_cap
 
     def optimize_ride_surge(
         self,
@@ -33,15 +32,12 @@ class PriceOptimizer:
         distance_miles: float,
         duration_min: float = None,
         is_premium: bool = False,
-        traffic_severity: int = 1,
-        weather_severity: int = 1,
-        is_new_user: int = 0
+        traffic_severity: int = 1
     ) -> dict:
         """
         Find optimal surge multiplier s* that maximizes:
             E[Revenue(s)] = Fare(s) * P_accept(s) * P_fulfill(s)
         Subject to:
-            P_cancel(s) <= cancel_risk_cap
             min_surge <= s <= max_surge
         """
         candidate_surges = np.arange(self.engine.min_surge, self.engine.max_surge + 0.05, 0.1)
@@ -51,8 +47,6 @@ class PriceOptimizer:
         max_expected_revenue = -1.0
         optimal_point = {}
 
-        ratio = float(demand) / max(1.0, float(supply))
-
         for s in candidate_surges:
             s_val = round(float(s), 2)
             quote = self.engine.calculate_ride_fare(
@@ -60,42 +54,32 @@ class PriceOptimizer:
                 duration_min=duration_min,
                 surge_multiplier=s_val,
                 is_premium=is_premium,
-                traffic_severity=traffic_severity,
-                weather_severity=weather_severity,
-                is_new_user=is_new_user
+                traffic_severity=traffic_severity
             )
 
             fare = quote["total_fare"]
-            p_cancel = quote["cancellation_risk"]
-            p_accept = max(0.02, 1.0 - p_cancel)
+            # Price elasticity acceptance probability curve
+            p_accept = float(np.clip(1.0 / (1.0 + np.exp(1.8 * (s_val - 1.0) - 1.5)), 0.05, 0.98))
 
             # Driver supply response: higher surge incentivizes more drivers to enter the zone
             supply_boost = float(supply) * (1.0 + 0.35 * (s_val - 1.0))
             p_fulfill = float(np.clip(supply_boost / max(1.0, float(demand)), 0.05, 1.0))
 
             expected_revenue = fare * p_accept * p_fulfill
-            is_valid = p_cancel <= self.cancel_risk_cap
 
             point = {
                 "surge_multiplier": s_val,
                 "fare": fare,
-                "cancellation_risk": p_cancel,
                 "acceptance_probability": round(p_accept, 3),
                 "fulfillment_probability": round(p_fulfill, 3),
-                "expected_revenue": round(expected_revenue, 2),
-                "is_risk_feasible": is_valid
+                "expected_revenue": round(expected_revenue, 2)
             }
             curve_data.append(point)
 
-            if is_valid and expected_revenue > max_expected_revenue:
+            if expected_revenue > max_expected_revenue:
                 max_expected_revenue = expected_revenue
                 best_surge = s_val
                 optimal_point = point
-
-        # Fallback if no point was strictly under cap
-        if not optimal_point and curve_data:
-            optimal_point = min(curve_data, key=lambda x: x["cancellation_risk"])
-            best_surge = optimal_point["surge_multiplier"]
 
         rule_based_surge = self.engine.calculate_surge_multiplier(demand=demand, supply=supply)
 
@@ -103,7 +87,7 @@ class PriceOptimizer:
             "optimal_surge": best_surge,
             "rule_based_surge": rule_based_surge,
             "optimal_expected_revenue": optimal_point.get("expected_revenue", 0.0),
-            "optimal_cancellation_risk": optimal_point.get("cancellation_risk", 0.0),
+            "optimal_acceptance_prob": optimal_point.get("acceptance_probability", 0.0),
             "optimal_fare": optimal_point.get("fare", 0.0),
             "curve": pd.DataFrame(curve_data)
         }
@@ -144,7 +128,7 @@ class PriceOptimizer:
                 is_premium=prem
             )
             static_price = static_quote["total_fare"]
-            static_accept_prob = max(0.05, 1.0 - static_quote["cancellation_risk"])
+            static_accept_prob = float(np.clip(1.0 / (1.0 + np.exp(1.8 * (1.0 - 1.0) - 1.5)), 0.05, 0.98))
             static_accepted = np.random.rand() < static_accept_prob
             static_fulfilled = static_accepted and (np.random.rand() < min(1.0, sup / max(1.0, dem)))
             static_rev = static_price if static_fulfilled else 0.0
@@ -158,7 +142,7 @@ class PriceOptimizer:
                 is_premium=prem
             )
             dynamic_price = dynamic_quote["total_fare"]
-            dynamic_accept_prob = max(0.05, 1.0 - dynamic_quote["cancellation_risk"])
+            dynamic_accept_prob = float(np.clip(1.0 / (1.0 + np.exp(1.8 * (surge - 1.0) - 1.5)), 0.05, 0.98))
             dynamic_accepted = np.random.rand() < dynamic_accept_prob
             
             # Dynamic surge attracts additional driver capacity

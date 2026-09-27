@@ -7,8 +7,8 @@ ML-based dynamic surge pricing and revenue optimization engine for **Ride-Hailin
 ## 🌟 Features
 
 - **Multi-Modal Dynamic Pricing**: Real-time fare calculations for Ride-Hailing (Standard, Premium, Shared) and On-Demand Food Delivery (Distance, Small Basket, Weather & Traffic Surcharges).
-- **Machine Learning Layer**: Trained XGBoost and Gradient Boosting models for demand forecasting, delivery delay prediction, and customer drop-off / cancellation probability estimation.
-- **Microeconomic Revenue Optimization**: Solves $\arg\max_s E[\text{Revenue}(s)]$ subject to a customer cancellation policy cap ($45\%$).
+- **Machine Learning Layer**: Trained XGBoost and Gradient Boosting models for demand forecasting and delivery delay prediction.
+- **Microeconomic Revenue Optimization**: Solves $\arg\max_s E[\text{Revenue}(s)]$ balancing price elasticity with driver fulfillment.
 - **Monte Carlo Market Simulation**: Benchmarks Static vs. Dynamic pricing strategies demonstrating $+38\%$ gross revenue lift and improved marketplace fulfillment.
 - **Interactive Streamlit Dashboard**: Dark-mode interface with live dispatch simulator, zone maps, 24-hour diurnal demand curves, and transaction logging.
 - **Scheduler Architecture Blueprint**: Official periodic batch pipeline specification detailed in comments in `scheduler/hourly_job.py`.
@@ -24,7 +24,6 @@ dynamic-fare-engine/
 │   ├── assets/style.css             # Glassmorphism dark-theme CSS design system
 │   ├── components/
 │   │   ├── price_display.py         # Dynamic pricing receipt card component
-│   │   ├── cancel_risk_gauge.py     # Customer drop-off risk meter component
 │   │   ├── demand_chart.py          # Altair diurnal demand curves & trade-off plots
 │   │   └── zone_map.py              # Geospatial urban zone map & status cards
 │   └── streamlit_app.py             # Master multi-tab Streamlit dashboard
@@ -67,7 +66,7 @@ pip install -r requirements.txt
 # Build processed dataset splits
 python -m src.features.build_features
 
-# Train ML demand and cancellation models
+# Train ML demand forecasting models
 python -m src.models.train
 ```
 

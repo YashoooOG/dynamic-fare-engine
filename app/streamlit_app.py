@@ -119,7 +119,6 @@ if page == "🚗 Ride Charges":
                 "base_fare": quote["base_fare"],
                 "surge_multiplier": quote["surge_multiplier"],
                 "total_fare": quote["total_fare"],
-                "cancellation_risk": 0.05,
                 "is_premium": int(is_prem),
                 "customer_accepted": 1,
                 "driver_payout": quote["driver_payout"],
@@ -209,7 +208,6 @@ else:
                 "base_fare": deliv_quote["base_fee"],
                 "surge_multiplier": deliv_quote["surge_multiplier"],
                 "total_fare": deliv_quote["total_delivery_fee"],
-                "cancellation_risk": 0.05,
                 "customer_accepted": 1,
                 "driver_payout": deliv_quote["driver_payout"],
                 "platform_fee": deliv_quote["platform_fee"]
