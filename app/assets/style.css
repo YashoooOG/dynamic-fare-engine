@@ -1,0 +1,74 @@
+/* =====================================================================
+   PURE BLACK & WHITE MINIMALIST STYLESHEET
+   Light Theme, Compact Single-Screen Layout
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+body, html, [class*="css"] {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+/* Hide streamlit default header padding to keep page non-scrollable */
+.block-container {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+  max-width: 1200px !important;
+}
+
+/* Clean Black & White Header */
+.app-header {
+  border-bottom: 2px solid #000000;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.app-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #000000;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.app-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid #000000;
+  padding: 2px 6px;
+  color: #000000;
+}
+
+/* Native Code block styling for Thermal Receipt */
+div[data-testid="stCode"] pre {
+  background-color: #fdfdfd !important;
+  color: #000000 !important;
+  border: 2px dashed #000000 !important;
+  border-radius: 0px !important;
+  font-family: 'Space Mono', 'Courier New', monospace !important;
+  font-size: 0.82rem !important;
+  line-height: 1.35 !important;
+  padding: 14px !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+
+/* Black & White Button */
+div.stButton > button {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  border-radius: 0px !important;
+  font-family: 'Space Mono', monospace !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+}
+
+div.stButton > button:hover {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+}

@@ -33,7 +33,9 @@ def encode_vehicle_tiers(df: pd.DataFrame, name_col: str = "name", cab_type_col:
     out = df.copy()
     
     if name_col in out.columns:
-        out["is_premium_tier"] = out[name_col].isin(PREMIUM_VEHICLE_NAMES).astype(int)
+        is_exact = out[name_col].isin(PREMIUM_VEHICLE_NAMES)
+        is_pattern = out[name_col].astype(str).str.contains("Lux|Black|SUV|UberXL|Executive", case=False, na=False)
+        out["is_premium_tier"] = (is_exact | is_pattern).astype(int)
         out["is_shared"] = out[name_col].astype(str).str.contains("Shared|Line|Pool", case=False, na=False).astype(int)
     else:
         out["is_premium_tier"] = 0
